@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@radix-ui/react-label";
 import { Helmet } from "react-helmet-async";
+import { toast } from "sonner";
 
 const SignInSchema = z.object({
   email: z.string().email(),
@@ -24,6 +25,8 @@ export function SignIn() {
     console.log(data);
     
     await new Promise((resolve) => setTimeout(resolve, 1000));
+    
+    toast.success("Login realizado com sucesso");
   }
 
   return (
