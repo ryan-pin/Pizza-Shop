@@ -5,9 +5,12 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { ArrowRight, Search, X } from "lucide-react";
 import { OrderDetails } from "./order-details";
 
-import { formatDistanceToNow } from "date-fns"
+import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { cancelOrder } from "@/api/cancel-order";
+import { GetOrdersResponse } from "@/api/get-order";
 
 interface OrderTableRowProps {
   order: {
@@ -20,8 +23,34 @@ interface OrderTableRowProps {
 }
 
 export function OrderTableRow({ order }: OrderTableRowProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const queryClient = useQueryClient();
 
-  const [isOpen, setIsOpen] = useState(false)
+  const { mutateAsync: cancelOrderFn } = useMutation({
+    mutationFn: cancelOrder,
+    async onSuccess(_, {orderId}) {
+      const ordersListCache = queryClient.getQueriesData<GetOrdersResponse>({
+        queryKey: ['orders'],
+      })
+
+      ordersListCache.forEach(([cacheKey, cacheData]) => {
+        if (!cacheData) {
+          return;
+        }
+
+        queryClient.setQueryData<GetOrdersResponse>(cacheKey, {
+          ...cacheData,
+          orders: cacheData.orders.map(order => {
+            if (order.orderId === orderId) {
+              return { ...order, status: 'canceled' };
+            }
+
+            return order;
+          }),
+        });
+      });
+    }
+  });
 
   return (
     <TableRow>
@@ -39,10 +68,12 @@ export function OrderTableRow({ order }: OrderTableRowProps) {
       <TableCell className="font-mono text-sm font-medium">
         {order.orderId}
       </TableCell>
-      <TableCell className="text-muted-foreground">{formatDistanceToNow(order.createdAt, {
-        locale: ptBR,
-        addSuffix: true,
-      })}</TableCell>
+      <TableCell className="text-muted-foreground">
+        {formatDistanceToNow(order.createdAt, {
+          locale: ptBR,
+          addSuffix: true,
+        })}
+      </TableCell>
       <TableCell>
         <OrderStatus status={order.status} />
       </TableCell>
@@ -60,7 +91,12 @@ export function OrderTableRow({ order }: OrderTableRowProps) {
         </Button>
       </TableCell>
       <TableCell>
-        <Button variant="ghost" size="sm">
+        <Button
+          disabled={!["pending", "processing"].includes(order.status)}
+          onClick={() => cancelOrderFn({ orderId: order.orderId })}
+          variant="ghost"
+          size="sm"
+        >
           <X className="h-3 w-3 mr-2" />
           Cancelar
         </Button>
