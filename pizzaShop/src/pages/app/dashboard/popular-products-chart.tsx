@@ -5,13 +5,6 @@ import { ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 import colors from "tailwindcss/colors";
 
-const data = [
-  { product: "Pizza de Frango", amount: 40 },
-  { product: "Pizza de 4 Queijos", amount: 30 },
-  { product: "Pizza Portuguesa", amount: 50 },
-  { product: "Pizza de Carne", amount: 40 },
-];
-
 const COLORS = [
   colors.sky[500],
   colors.amber[500],
